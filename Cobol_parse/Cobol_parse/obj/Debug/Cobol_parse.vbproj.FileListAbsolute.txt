@@ -1,0 +1,16 @@
+D:\FreeLance\John\Cobol_parse\Cobol_parse\bin\Debug\Cobol_parse.exe
+D:\FreeLance\John\Cobol_parse\Cobol_parse\bin\Debug\Cobol_parse.pdb
+D:\FreeLance\John\Cobol_parse\Cobol_parse\bin\Debug\Cobol_parse.xml
+D:\FreeLance\John\Cobol_parse\Cobol_parse\obj\Debug\Cobol_parse.Resources.resources
+D:\FreeLance\John\Cobol_parse\Cobol_parse\obj\Debug\Cobol_parse.vbproj.GenerateResource.Cache
+D:\FreeLance\John\Cobol_parse\Cobol_parse\obj\Debug\Cobol_parse.exe
+D:\FreeLance\John\Cobol_parse\Cobol_parse\obj\Debug\Cobol_parse.xml
+D:\FreeLance\John\Cobol_parse\Cobol_parse\obj\Debug\Cobol_parse.pdb
+G:\FreeLance\John_Elance\Week3\Scripts\County_parse\Cobol_parse\Cobol_parse\bin\Debug\Cobol_parse.exe
+G:\FreeLance\John_Elance\Week3\Scripts\County_parse\Cobol_parse\Cobol_parse\bin\Debug\Cobol_parse.pdb
+G:\FreeLance\John_Elance\Week3\Scripts\County_parse\Cobol_parse\Cobol_parse\bin\Debug\Cobol_parse.xml
+G:\FreeLance\John_Elance\Week3\Scripts\County_parse\Cobol_parse\Cobol_parse\obj\Debug\Cobol_parse.Resources.resources
+G:\FreeLance\John_Elance\Week3\Scripts\County_parse\Cobol_parse\Cobol_parse\obj\Debug\Cobol_parse.vbproj.GenerateResource.Cache
+G:\FreeLance\John_Elance\Week3\Scripts\County_parse\Cobol_parse\Cobol_parse\obj\Debug\Cobol_parse.exe
+G:\FreeLance\John_Elance\Week3\Scripts\County_parse\Cobol_parse\Cobol_parse\obj\Debug\Cobol_parse.xml
+G:\FreeLance\John_Elance\Week3\Scripts\County_parse\Cobol_parse\Cobol_parse\obj\Debug\Cobol_parse.pdb
