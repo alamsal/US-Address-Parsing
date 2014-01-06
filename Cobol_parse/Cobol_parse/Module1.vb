@@ -141,7 +141,6 @@ Module Module1
     End Function
     'Validate address using ZP4 software
     Public Function parseZP4(ByVal address As String, ByVal city As String, ByVal state As String) As StringBuilder
-
         Dim addstring As String
         Dim session As Integer = 0
         ZP4.ZP4StartSession(session)
@@ -210,34 +209,37 @@ Module Module1
                     'From each component check for the type section for getting the particular postal_code section
                     Dim gcount As Integer = 0 'Just to read first entry of google map
                     For Each m_node In m_nodelist
-                        'Get the zipLongName Element Value
-                        Dim LongName = m_node.ChildNodes.Item(0).InnerText
-                        'Get the zipShortName Element Value
-                        Dim ShortName = m_node.ChildNodes.Item(1).InnerText
-                        'Get the zipType Element Value
-                        Dim Type = m_node.ChildNodes.Item(2).InnerText
+                        Try
+                            'Get the zipLongName Element Value
+                            Dim LongName = m_node.ChildNodes.Item(0).InnerText
+                            'Get the zipShortName Element Value
+                            Dim ShortName = m_node.ChildNodes.Item(1).InnerText
+                            'Get the zipType Element Value
+                            Dim Type = m_node.ChildNodes.Item(2).InnerText
 
-                        'If the type of the component is postal_code then get the postal code as zipLongName
-                        If Type = "street_number" Then
-                            m_hashTable.Add("street_number", LongName)
-                        End If
+                            'If the type of the component is postal_code then get the postal code as zipLongName
+                            If Type = "street_number" Then
+                                m_hashTable.Add("street_number", LongName)
+                            End If
 
-                        If Type = "route" Then
-                            m_hashTable.Add("street", LongName)
-                        End If
+                            If Type = "route" Then
+                                m_hashTable.Add("street", LongName)
+                            End If
 
-                        If Type = "locality" Then
-                            m_hashTable.Add("city", LongName)
-                        End If
-                        If Type = "administrative_area_level_1" Then
-                            m_hashTable.Add("state", ShortName)
-                        End If
-                        If Type = "postal_code" Then
-                            zipCode = LongName
-                            m_hashTable.Add("zip", LongName)
-                        End If
-                        gcount = gcount + 1
-
+                            If Type = "locality" Then
+                                m_hashTable.Add("city", LongName)
+                            End If
+                            If Type = "administrative_area_level_1" Then
+                                m_hashTable.Add("state", ShortName)
+                            End If
+                            If Type = "postal_code" Then
+                                zipCode = LongName
+                                m_hashTable.Add("zip", LongName)
+                            End If
+                            gcount = gcount + 1
+                        Catch ex As Exception
+                            Console.WriteLine(ex.ToString())
+                        End Try
                     Next
 
                 End If
@@ -342,6 +344,7 @@ Module Module1
         Dim googleParseStatus As String = ""
         Dim tempAddress As String
         Dim oldParcelId As String = ""
+        Dim zpFlag As Boolean = True
         Dim UFC_Parcel_City, UFC_Parcel_State, UFC_Parcel_ZIP_Code, UFC_Parcel_Street_Address, UFC_Parcel_ZIP_Code4 As String
         returnAddress.Clear()
 
@@ -362,12 +365,14 @@ Module Module1
         UFC_Parcel_ZIP_Code4 = zpaddress(5)
         zip4 = zpaddress(3)
         zp4ParseStatus = zpaddress(6)
+
         If ((zpaddress(0) = "0") Or (zpaddress(0) = "NO") Or (zpaddress(0) = "")) Then
             UFC_Parcel_City = "Invalid"
             UFC_Parcel_State = "Invalid"
             UFC_Parcel_ZIP_Code = "Invalid"
             UFC_Parcel_Street_Address = "Invalid"
             UFC_Parcel_ZIP_Code4 = "Invalid"
+            zpFlag = False
         End If
         'If ZP4 couldn't find the address
         If ((zip4 = " ") Or (zip4 = "") Or (zpaddress(0) = "0") Or (zpaddress(0) = "NO") Or (zpaddress(0) = " ") Or (zpaddress(0) = "") Or (zpaddress(0) = "no") Or (zpaddress(0) = "No")) Then
@@ -399,6 +404,22 @@ Module Module1
                 googleParseStatus = "Parse Address:Bing"
             End If
         End If
+        'Parse corrected address using ZP4
+        If (zpFlag) Then
+            zp4address = parseZP4(UFC_Parcel_Street_Address, UFC_Parcel_City, UFC_Parcel_State)
+            zpaddress = zp4address.ToString.Split(vbTab)
+
+            UFC_Parcel_City = zpaddress(1)
+            UFC_Parcel_State = zpaddress(2)
+            UFC_Parcel_ZIP_Code = zpaddress(4)
+            UFC_Parcel_Street_Address = zpaddress(0)
+            UFC_Parcel_ZIP_Code4 = zpaddress(5)
+            zip4 = zpaddress(3)
+            zp4ParseStatus = zpaddress(6)
+            If (zp4ParseStatus = "") Then
+                zp4ParseStatus = "Parse completed:ZP4"
+            End If
+        End If
 
         returnAddress.Add("city", UFC_Parcel_City)
         returnAddress.Add("state", UFC_Parcel_State)
@@ -407,7 +428,6 @@ Module Module1
         returnAddress.Add("street", UFC_Parcel_Street_Address)
         returnAddress.Add("googlebingstatus", googleParseStatus)
         returnAddress.Add("zp4status", zp4ParseStatus)
-
         Return (returnAddress)
     End Function
     'Parse Counties
@@ -2081,7 +2101,7 @@ Module Module1
     End Sub
     Sub Parse_Highlands_County()
         'Highhlands river county record length
-        Dim Highlands_County_record_length As Integer = 112473
+        Dim Highlands_County_record_length As Integer = 112472
         'variables
         Dim Highlands_County_Tax_Yr(Highlands_County_record_length) As String
         Dim Highlands_County_Account_Number(Highlands_County_record_length) As String
@@ -2165,10 +2185,10 @@ Module Module1
         End If
         'test o/p arrays
         Console.WriteLine(Highlands_County_Account_Number(1))
-        Console.WriteLine(Highlands_County_Account_Number(112473))
-        Console.WriteLine(Highlands_County_Owner_Name(112473))
+        Console.WriteLine(Highlands_County_Account_Number(112472))
+        Console.WriteLine(Highlands_County_Owner_Name(112472))
         Console.WriteLine(Highlands_County_Bidder_no(1))
-        Console.WriteLine(Highlands_County_Bidder_no(112473))
+        Console.WriteLine(Highlands_County_Bidder_no(112472))
 
         Console.WriteLine("Ready to write outputs in UFC file ...")
         Dim writeCsv As New StreamWriter("G:\FreeLance\John_Elance\Week4\Highlands_colon_formatted_csv.txt")
@@ -2185,11 +2205,11 @@ Module Module1
         Dim UFC_Parcel_Street_Address_4 As String
         Dim UFC_Parcel_Street_Address_5 As String
         Dim UFC_Parcel_Street_Address_6 As String
-        Dim UFC_Parcel_Street_Address As String
-        Dim UFC_Parcel_City As String
-        Dim UFC_Parcel_State As String
-        Dim UFC_Parcel_ZIP_Code As String
-        Dim UFC_Parcel_ZIP_Code4 As String
+        Dim UFC_Parcel_Street_Address As String = ""
+        Dim UFC_Parcel_City As String = ""
+        Dim UFC_Parcel_State As String = ""
+        Dim UFC_Parcel_ZIP_Code As String = ""
+        Dim UFC_Parcel_ZIP_Code4 As String = ""
         Dim UFC_Parcel_Owner_First_Name As String
         Dim UFC_Parcel_Owner_Last_Name As String
         Dim UFC_Parcel_Owner_Street_Address_1 As String
@@ -2229,17 +2249,24 @@ Module Module1
         Dim UFC_TC_Interest_Rate As Decimal
         Dim UFC_TC_Redemption_Amount As Integer
         Dim UFC_TC_Days_Unpaid As Integer
-
-
-
-        writeCsv.WriteLine("ParcelCounty~ParcelID~ParcelStatus~ParcelTaxDistrict~ParcelJustValue~ParcelTaxableValue~ParcelStreetAddress1~ParcelStreetAddress2~ParcelStreetAddress3~ParcelStreetAddress4~ParcelStreetAddress5~ParcelStreetAddress6~ParcelStreetAddress~ParcelCity~ParcelState~ParcelZIPCode~ParcelZIPCode+4~ParcelOwnerFirstName~ParcelOwnerLastName~ParcelOwnerStreetAddress1~ParcelOwnerStreetAddress2~ParcelOwnerStreetAddress3~ParcelOwnerStreetAddress4~ParcelOwnerStreetAddress5~ParcelOwnerStreetAddress6~ParcelOwnerStreetAddress~ParcelOwnerCity~ParcelOwnerState~ParcelOwnerZIPCode~ParcelOwnerZIPCode+4~ParcelOwnerCountry~ParcelNum.ofExemptions~ParcelTotalEx.Amount~ParcelExemptionType1~ParcelExemptionType2~ParcelExemptionType3~ParcelExemptionType4~ParcelExemptionType5~ParcelExemptionType6~ParcelExemptionAmount1~ParcelExemptionAmount2~ParcelExemptionAmount3~ParcelExemptionAmount4~ParcelExemptionAmount5~ParcelExemptionAmount6~ParcelLegalDescription~TCNumber~TCStatus~TCIssueYear~TCTaxYear~TCFaceValue~TCSaleDate~TCRedemptionDate~TCInterestRate~TCRedemptionAmount~TCDaysUnpaid~ZP4AddressStatus~GoogleAddressStatus")
+        'writing variables in UFC
+        writeCsv.WriteLine("ParcelCounty~ParcelID~ParcelStatus~ParcelTaxDistrict~ParcelJustValue~ParcelTaxableValue~ParcelStreetAddress1~ParcelStreetAddress2~ParcelStreetAddress3~ParcelStreetAddress4~ParcelStreetAddress5~ParcelStreetAddress6~ParcelStreetAddress~ParcelCity~ParcelState~ParcelZIPCode~ParcelZIPCode+4~ParcelOwnerFirstName~ParcelOwnerLastName~ParcelOwnerStreetAddress1~ParcelOwnerStreetAddress2~ParcelOwnerStreetAddress3~ParcelOwnerStreetAddress4~ParcelOwnerStreetAddress5~ParcelOwnerStreetAddress6~ParcelOwnerStreetAddress~ParcelOwnerCity~ParcelOwnerState~ParcelOwnerZIPCode~ParcelOwnerZIPCode+4~ParcelOwnerCountry~ParcelNum.ofExemptions~ParcelTotalEx.Amount~ParcelExemptionType1~ParcelExemptionType2~ParcelExemptionType3~ParcelExemptionType4~ParcelExemptionType5~ParcelExemptionType6~ParcelExemptionAmount1~ParcelExemptionAmount2~ParcelExemptionAmount3~ParcelExemptionAmount4~ParcelExemptionAmount5~ParcelExemptionAmount6~ParcelLegalDescription~TCNumber~TCStatus~TCIssueYear~TCTaxYear~TCFaceValue~TCSaleDate~TCRedemptionDate~TCInterestRate~TCRedemptionAmount~TCDaysUnpaid~ZP4AddressStatus~Google&BingAddressStatus")
+        Dim correctedAddress As New Hashtable
+        Dim zp4ParseStatus As String = ""
+        Dim googleParseStatus As String = ""
+        Dim tempAddress As String
+        Dim oldParcelId As String = ""
 
         For i As Integer = 1 To Highlands_County_record_length - 1
 
             UFC_Parcel_County = "Highlands"
+            Try
+                UFC_Parcel_ID = Highlands_County_Account_Number(i).Trim
+                Console.WriteLine(UFC_Parcel_ID)
+            Catch ex As Exception
+                Console.WriteLine(ex.ToString())
+            End Try
 
-            UFC_Parcel_ID = Highlands_County_Account_Number(i).Trim
-            Console.WriteLine(UFC_Parcel_ID)
             UFC_Parcel_Status = Highlands_County_Account_Status(i).Trim
             Select Case UFC_Parcel_Status
                 Case "Paid in full"
@@ -2259,57 +2286,25 @@ Module Module1
             UFC_Parcel_Street_Address_5 = ""
             UFC_Parcel_Street_Address_6 = ""
 
-            Dim googleAddress As Hashtable
-            Dim pAddress As Collection
-            Dim zp4address As StringBuilder
-            Dim zpaddress As String()
-            Dim pcity, pstate, pzip, pstaddress, zip4 As String
-            Dim zp4ParseStatus As String = ""
-            Dim googleParseStatus As String = ""
-            pAddress = parseAddress(Highlands_County_Property_Address(i).Trim)
-            pcity = pAddress.Item("City")
-            pstate = pAddress.Item("State")
-            pzip = pAddress.Item("Zip")
-            pstaddress = pAddress.Item("Address1")
-
-            zp4address = parseZP4(pstaddress, pcity, pstate)
-            zpaddress = zp4address.ToString.Split(vbTab)
-
-            UFC_Parcel_City = zpaddress(1)
-            UFC_Parcel_State = zpaddress(2)
-            UFC_Parcel_ZIP_Code = zpaddress(4)
-            UFC_Parcel_Street_Address = zpaddress(0)
-            UFC_Parcel_ZIP_Code4 = zpaddress(5)
-            zip4 = zpaddress(3)
-            zp4ParseStatus = zpaddress(6)
-            If ((zpaddress(0) = "0") Or (zpaddress(0) = "NO") Or (zpaddress(0) = "") Or (zpaddress(0) = "FL")) Then
-                UFC_Parcel_Street_Address_6 = "Invalid"
-                UFC_Parcel_City = "Invalid"
-                UFC_Parcel_State = "Invalid"
-                UFC_Parcel_ZIP_Code = "Invalid"
-                UFC_Parcel_Street_Address = "Invalid"
-                UFC_Parcel_ZIP_Code4 = "Invalid"
-            End If
-            'If ZP4 couldn't find the address
-            If ((zip4 = " ") Or (zip4 = "") Or (zpaddress(0) = "0") Or (zpaddress(0) = "FL") Or (zpaddress(0) = "NO") Or (zpaddress(0) = " ") Or (zpaddress(0) = "") Or (zpaddress(0) = "no") Or (zpaddress(0) = "No")) Then
-                'parse using Google Geocodign API
-                googleAddress = GetGoogleAddress(Highlands_County_Property_Address(i).Trim, "", "FL")
-                Try
-                    If (googleAddress.Count < 5) Then
-                        googleParseStatus = "Invalid Address:Google "
-                    Else
-                        UFC_Parcel_City = googleAddress("city")
-                        UFC_Parcel_State = googleAddress("state")
-                        UFC_Parcel_ZIP_Code = googleAddress("zip")
-                        UFC_Parcel_Street_Address = googleAddress("street_number") & " " & googleAddress("street")
-                        UFC_Parcel_ZIP_Code4 = ""
-                        googleParseStatus = "Parse Address:Google "
-                    End If
-                Catch ex As Exception
-                    Console.WriteLine("Invalid Address:Google ")
-                End Try
-
-
+            If (oldParcelId = UFC_Parcel_ID) Then
+                UFC_Parcel_City = UFC_Parcel_City
+                UFC_Parcel_State = UFC_Parcel_State
+                UFC_Parcel_ZIP_Code = UFC_Parcel_ZIP_Code
+                UFC_Parcel_Street_Address = UFC_Parcel_Street_Address
+                UFC_Parcel_ZIP_Code4 = UFC_Parcel_ZIP_Code4
+                googleParseStatus = googleParseStatus
+                zp4ParseStatus = zp4ParseStatus
+            Else
+                oldParcelId = UFC_Parcel_ID
+                tempAddress = Highlands_County_Property_Address(i).Trim
+                correctedAddress = GetCorrectedAddress(tempAddress)
+                UFC_Parcel_City = correctedAddress("city")
+                UFC_Parcel_State = correctedAddress("state")
+                UFC_Parcel_ZIP_Code = correctedAddress("zip")
+                UFC_Parcel_ZIP_Code4 = correctedAddress("zip4")
+                UFC_Parcel_Street_Address = correctedAddress("street")
+                googleParseStatus = correctedAddress("googlebingstatus")
+                zp4ParseStatus = correctedAddress("zp4status")
             End If
 
             UFC_Parcel_Owner_First_Name = Highlands_County_Owner_Name(i).Trim
@@ -3017,10 +3012,7 @@ Module Module1
                 googleParseStatus = correctedAddress("googlebingstatus")
                 zp4ParseStatus = correctedAddress("zp4status")
             End If
-
-
-
-            UFC_Parcel_Owner_First_Name = Manatee_County_OWNER_1ST(i).Trim
+            UFC_Parcel_Owner_First_Name = ""
             UFC_Parcel_Owner_Last_Name = ""
             UFC_Parcel_Owner_Street_Address_1 = ""
             UFC_Parcel_Owner_Street_Address_2 = ""
@@ -3271,7 +3263,7 @@ Module Module1
         Console.WriteLine(Clay_County_FACE_AMT(31836))
 
         Console.WriteLine("Ready to write outputs in UFC file ...")
-        Dim writeCsv As New StreamWriter("G:\FreeLance\John_Elance\Week4\Clay_address_formatted_csv.txt")
+        Dim writeCsv As New StreamWriter("G:\FreeLance\John_Elance\Week4\Clay_ufc_formatted2916.txt")
 
         Dim UFC_Parcel_County As String
         Dim UFC_Parcel_ID As String
@@ -3285,11 +3277,11 @@ Module Module1
         Dim UFC_Parcel_Street_Address_4 As String
         Dim UFC_Parcel_Street_Address_5 As String
         Dim UFC_Parcel_Street_Address_6 As String
-        Dim UFC_Parcel_Street_Address As String
-        Dim UFC_Parcel_City As String
-        Dim UFC_Parcel_State As String
-        Dim UFC_Parcel_ZIP_Code As String
-        Dim UFC_Parcel_ZIP_Code4 As String
+        Dim UFC_Parcel_Street_Address As String = ""
+        Dim UFC_Parcel_City As String = ""
+        Dim UFC_Parcel_State As String = ""
+        Dim UFC_Parcel_ZIP_Code As String = ""
+        Dim UFC_Parcel_ZIP_Code4 As String = ""
         Dim UFC_Parcel_Owner_First_Name As String
         Dim UFC_Parcel_Owner_Last_Name As String
         Dim UFC_Parcel_Owner_Street_Address_1 As String
@@ -3329,12 +3321,16 @@ Module Module1
         Dim UFC_TC_Interest_Rate As Decimal
         Dim UFC_TC_Redemption_Amount As Integer
         Dim UFC_TC_Days_Unpaid As Integer
+        'writing variables in UFC
+        writeCsv.WriteLine("ParcelCounty~ParcelID~ParcelStatus~ParcelTaxDistrict~ParcelJustValue~ParcelTaxableValue~ParcelStreetAddress1~ParcelStreetAddress2~ParcelStreetAddress3~ParcelStreetAddress4~ParcelStreetAddress5~ParcelStreetAddress6~ParcelStreetAddress~ParcelCity~ParcelState~ParcelZIPCode~ParcelZIPCode+4~ParcelOwnerFirstName~ParcelOwnerLastName~ParcelOwnerStreetAddress1~ParcelOwnerStreetAddress2~ParcelOwnerStreetAddress3~ParcelOwnerStreetAddress4~ParcelOwnerStreetAddress5~ParcelOwnerStreetAddress6~ParcelOwnerStreetAddress~ParcelOwnerCity~ParcelOwnerState~ParcelOwnerZIPCode~ParcelOwnerZIPCode+4~ParcelOwnerCountry~ParcelNum.ofExemptions~ParcelTotalEx.Amount~ParcelExemptionType1~ParcelExemptionType2~ParcelExemptionType3~ParcelExemptionType4~ParcelExemptionType5~ParcelExemptionType6~ParcelExemptionAmount1~ParcelExemptionAmount2~ParcelExemptionAmount3~ParcelExemptionAmount4~ParcelExemptionAmount5~ParcelExemptionAmount6~ParcelLegalDescription~TCNumber~TCStatus~TCIssueYear~TCTaxYear~TCFaceValue~TCSaleDate~TCRedemptionDate~TCInterestRate~TCRedemptionAmount~TCDaysUnpaid~ZP4AddressStatus~Google&BingAddressStatus")
+        Dim correctedAddress As New Hashtable
+        Dim zp4ParseStatus As String = ""
+        Dim googleParseStatus As String = ""
+        Dim tempAddress As String
+        Dim oldParcelId As String = ""
 
-        writeCsv.WriteLine("ParcelCounty~ParcelID~ParcelStatus~ParcelTaxDistrict~ParcelJustValue~ParcelTaxableValue~ParcelStreetAddress1~ParcelStreetAddress2~ParcelStreetAddress3~ParcelStreetAddress4~ParcelStreetAddress5~ParcelStreetAddress6~ParcelStreetAddress~ParcelCity~ParcelState~ParcelZIPCode~ParcelZIPCode+4~ParcelOwnerFirstName~ParcelOwnerLastName~ParcelOwnerStreetAddress1~ParcelOwnerStreetAddress2~ParcelOwnerStreetAddress3~ParcelOwnerStreetAddress4~ParcelOwnerStreetAddress5~ParcelOwnerStreetAddress6~ParcelOwnerStreetAddress~ParcelOwnerCity~ParcelOwnerState~ParcelOwnerZIPCode~ParcelOwnerZIPCode+4~ParcelOwnerCountry~ParcelNum.ofExemptions~ParcelTotalEx.Amount~ParcelExemptionType1~ParcelExemptionType2~ParcelExemptionType3~ParcelExemptionType4~ParcelExemptionType5~ParcelExemptionType6~ParcelExemptionAmount1~ParcelExemptionAmount2~ParcelExemptionAmount3~ParcelExemptionAmount4~ParcelExemptionAmount5~ParcelExemptionAmount6~ParcelLegalDescription~TCNumber~TCStatus~TCIssueYear~TCTaxYear~TCFaceValue~TCSaleDate~TCRedemptionDate~TCInterestRate~TCRedemptionAmount~TCDaysUnpaid~ZP4AddressStatus~GoogleAddressStatus")
         For i As Integer = 1 To Clay_County_record_length - 1
-
             UFC_Parcel_County = "Clay"
-
             UFC_Parcel_ID = Clay_County_ACCT(i).Trim
             Console.WriteLine(UFC_Parcel_ID)
             UFC_Parcel_Status = ""
@@ -3348,59 +3344,28 @@ Module Module1
             UFC_Parcel_Street_Address_5 = ""
             UFC_Parcel_Street_Address_6 = ""
 
-            Dim googleAddress As Hashtable
-            Dim pAddress As Collection
-            Dim zp4address As StringBuilder
-            Dim zpaddress As String()
-            Dim pcity, pstate, pzip, pstaddress, zip4 As String
-            Dim zp4ParseStatus As String = ""
-            Dim googleParseStatus As String = ""
-            Dim tempAddress As String = Clay_County_TAXM_ST_NO(i).Trim & " " & Clay_County_TAXM_ST_NAME(i).Trim
-            pAddress = parseAddress(tempAddress.Trim)
-            pcity = pAddress.Item("City")
-            pstate = pAddress.Item("State")
-            pzip = pAddress.Item("Zip")
-            pstaddress = pAddress.Item("Address1")
-
-            zp4address = parseZP4(pstaddress, pcity, pstate)
-            zpaddress = zp4address.ToString.Split(vbTab)
-
-            UFC_Parcel_City = zpaddress(1)
-            UFC_Parcel_State = zpaddress(2)
-            UFC_Parcel_ZIP_Code = zpaddress(4)
-            UFC_Parcel_Street_Address = zpaddress(0)
-            UFC_Parcel_ZIP_Code4 = zpaddress(5)
-            zip4 = zpaddress(3)
-            zp4ParseStatus = zpaddress(6)
-            If ((zpaddress(0) = "0") Or (zpaddress(0) = "NO") Or (zpaddress(0) = "") Or (zpaddress(0) = "FL")) Then
-                UFC_Parcel_Street_Address_6 = "Invalid"
-                UFC_Parcel_City = "Invalid"
-                UFC_Parcel_State = "Invalid"
-                UFC_Parcel_ZIP_Code = "Invalid"
-                UFC_Parcel_Street_Address = "Invalid"
-                UFC_Parcel_ZIP_Code4 = "Invalid"
+            If (oldParcelId = UFC_Parcel_ID) Then
+                UFC_Parcel_City = UFC_Parcel_City
+                UFC_Parcel_State = UFC_Parcel_State
+                UFC_Parcel_ZIP_Code = UFC_Parcel_ZIP_Code
+                UFC_Parcel_Street_Address = UFC_Parcel_Street_Address
+                UFC_Parcel_ZIP_Code4 = UFC_Parcel_ZIP_Code4
+                googleParseStatus = googleParseStatus
+                zp4ParseStatus = zp4ParseStatus
+            Else
+                oldParcelId = UFC_Parcel_ID
+                tempAddress = Clay_County_TAXM_ST_NO(i).Trim & " " & Clay_County_TAXM_ST_NAME(i).Trim
+                correctedAddress = GetCorrectedAddress(tempAddress)
+                UFC_Parcel_City = correctedAddress("city")
+                UFC_Parcel_State = correctedAddress("state")
+                UFC_Parcel_ZIP_Code = correctedAddress("zip")
+                UFC_Parcel_ZIP_Code4 = correctedAddress("zip4")
+                UFC_Parcel_Street_Address = correctedAddress("street")
+                googleParseStatus = correctedAddress("googlebingstatus")
+                zp4ParseStatus = correctedAddress("zp4status")
             End If
-            'If ZP4 couldn't find the address
-            If ((zip4 = " ") Or (zip4 = "") Or (zpaddress(0) = "0") Or (zpaddress(0) = "NO") Or (zpaddress(0) = "FL") Or (zpaddress(0) = " ") Or (zpaddress(0) = "") Or (zpaddress(0) = "no") Or (zpaddress(0) = "No")) Then
-                'parse using Google Geocodign API
-                googleAddress = GetGoogleAddress(tempAddress.Trim, "", "FL")
-                Try
-                    If (googleAddress.Count < 5) Then
-                        googleParseStatus = "Invalid Address:Google "
-                    Else
-                        UFC_Parcel_City = googleAddress("city")
-                        UFC_Parcel_State = googleAddress("state")
-                        UFC_Parcel_ZIP_Code = googleAddress("zip")
-                        UFC_Parcel_Street_Address = googleAddress("street_number") & " " & googleAddress("street")
-                        UFC_Parcel_ZIP_Code4 = ""
-                        googleParseStatus = "Parse Address:Google "
-                    End If
-                Catch ex As Exception
-                    Console.WriteLine("Invalid Address:Google ")
-                End Try
 
 
-            End If
             If Clay_County_OWNR_ADDR4(i).Trim = "" Then
                 UFC_Parcel_Owner_First_Name = Clay_County_OWNR_ADDR1(i).Trim
             Else
@@ -3607,374 +3572,6 @@ Module Module1
         Console.WriteLine("Written into file completed....")
 
     End Sub
-    'Wait until new file arrives from John
-    'Sub Parse_Columbia_County()
-    '    'Columbia  county record length
-    '    Dim Columbia_County_record_length As Integer = 36133
-    '    'variables
-    '    Dim Columbia_County_TBPD_tax_year(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_assessed_year(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_acct_no(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_folio_no(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_escro(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_loan_no(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_ex_type(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_status(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_assessed(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_base_exempt(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_base_taxable(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_mill_code(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_ownr_no(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_ownr_addr1(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_ownr_addr2(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_ownr_addr3(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_ownr_addr4(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_ownr_addr5(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_ownr_addr6(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_ownr_addr7(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_zip(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_legal1(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_legal2(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_legal3(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_legal4(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_legal5(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_legal6(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_legal7(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_acres(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_installments(Columbia_County_record_length) As String
-
-    '    Dim Columbia_County_TBPD_dist_type(Columbia_County_record_length, 30) As String
-    '    Dim Columbia_County_TBPD_dist_code(Columbia_County_record_length, 30) As String
-    '    Dim Columbia_County_TBPD_dist_exem(Columbia_County_record_length, 30) As String
-    '    Dim Columbia_County_TBPD_dist_txbl(Columbia_County_record_length, 30) As String
-    '    Dim Columbia_County_TBPD_dist_tax(Columbia_County_record_length, 30) As String
-
-    '    Dim Columbia_County_TBPD_total_tax(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_total_paid(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_balance(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_receipt_no(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_date_paid(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_paid_by(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_nov_amount(Columbia_County_record_length) As String
-
-    '    Dim Columbia_County_TBPD_delq_year(Columbia_County_record_length, 10) As String
-    '    Dim Columbia_County_TBPD_delq_tax(Columbia_County_record_length, 10) As String
-    '    Dim Columbia_County_TBPD_delq_face(Columbia_County_record_length, 10) As String
-
-    '    Dim Columbia_County_TBPD_st_city(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_st_name(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_st_no(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_geo_number(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_future_use(Columbia_County_record_length) As String
-    '    Dim Columbia_County_TBPD_end_char(Columbia_County_record_length) As String
-
-    '    'record counter
-    '    Dim count As Integer = 1
-    '    'read the file location
-    '    Dim textLine As String
-
-    '    Dim FILE_NAME As String = "G:\FreeLance\John_Elance\Week3\Task4\Columbia County - TPESCROW.txt"
-    '    If System.IO.File.Exists(FILE_NAME) = True Then
-
-    '        Dim objReader As New System.IO.StreamReader(FILE_NAME)
-
-    '        Do While objReader.Peek() <> -1
-
-    '            If count <= Columbia_County_record_length Then
-
-    '                textLine = objReader.ReadLine() & vbNewLine
-    '                'parsing the lines
-    '                Columbia_County_TBPD_tax_year(count) = textLine.Substring(0, 4)
-    '                'Console.WriteLine(textLine.Substring(8, 20))
-    '                Columbia_County_TBPD_assessed_year(count) = textLine.Substring(4, 4)
-    '                Columbia_County_TBPD_acct_no(count) = textLine.Substring(8, 20)
-    '                Columbia_County_TBPD_folio_no(count) = textLine.Substring(28, 11)
-    '                Columbia_County_TBPD_escro(count) = textLine.Substring(39, 6)
-
-    '                Columbia_County_TBPD_loan_no(count) = textLine.Substring(45, 15)
-    '                Columbia_County_TBPD_ex_type(count) = textLine.Substring(60, 4)
-    '                Columbia_County_TBPD_status(count) = textLine.Substring(64, 2)
-    '                Columbia_County_TBPD_assessed(count) = textLine.Substring(66, 11)
-    '                Columbia_County_TBPD_base_exempt(count) = textLine.Substring(77, 11)
-    '                Columbia_County_TBPD_base_taxable(count) = textLine.Substring(88, 11)
-    '                Columbia_County_TBPD_mill_code(count) = textLine.Substring(99, 6)
-    '                Columbia_County_TBPD_ownr_no(count) = textLine.Substring(105, 7)
-    '                Columbia_County_TBPD_ownr_addr1(count) = textLine.Substring(112, 30)
-    '                Columbia_County_TBPD_ownr_addr2(count) = textLine.Substring(142, 30)
-    '                Columbia_County_TBPD_ownr_addr3(count) = textLine.Substring(172, 30)
-    '                Columbia_County_TBPD_ownr_addr4(count) = textLine.Substring(202, 30)
-    '                Columbia_County_TBPD_ownr_addr5(count) = textLine.Substring(232, 30)
-    '                Columbia_County_TBPD_ownr_addr6(count) = textLine.Substring(262, 30)
-    '                Columbia_County_TBPD_ownr_addr7(count) = textLine.Substring(292, 30)
-    '                Columbia_County_TBPD_zip(count) = textLine.Substring(322, 10)
-    '                Columbia_County_TBPD_legal1(count) = textLine.Substring(332, 45)
-    '                Columbia_County_TBPD_legal2(count) = textLine.Substring(377, 45)
-    '                Columbia_County_TBPD_legal3(count) = textLine.Substring(422, 45)
-    '                Columbia_County_TBPD_legal4(count) = textLine.Substring(467, 45)
-    '                Columbia_County_TBPD_legal5(count) = textLine.Substring(512, 45)
-    '                Columbia_County_TBPD_legal6(count) = textLine.Substring(557, 45)
-    '                Columbia_County_TBPD_legal7(count) = textLine.Substring(602, 45)
-    '                Columbia_County_TBPD_acres(count) = textLine.Substring(647, 9)
-    '                Columbia_County_TBPD_installments(count) = textLine.Substring(656, 1)
-
-    '                'multidimensional  array to put 30 variables
-    '                Dim n As Integer = 657
-    '                For dist_counter = 0 To 29
-
-
-    '                    Columbia_County_TBPD_dist_type(count, dist_counter) = textLine.Substring(n, 1)
-    '                    Columbia_County_TBPD_dist_code(count, dist_counter) = textLine.Substring(n + 1, 3)
-    '                    Columbia_County_TBPD_dist_exem(count, dist_counter) = textLine.Substring(n + 4, 11)
-    '                    Columbia_County_TBPD_dist_txbl(count, dist_counter) = textLine.Substring(n + 15, 11)
-    '                    Columbia_County_TBPD_dist_tax(count, dist_counter) = textLine.Substring(n + 26, 10)
-    '                    n = n + 36
-    '                Next dist_counter
-
-
-
-    '                Columbia_County_TBPD_total_tax(count) = textLine.Substring(1737, 13)
-    '                Columbia_County_TBPD_total_paid(count) = textLine.Substring(1750, 14)
-    '                Columbia_County_TBPD_balance(count) = textLine.Substring(1764, 14)
-    '                Columbia_County_TBPD_receipt_no(count) = textLine.Substring(1778, 11)
-    '                Columbia_County_TBPD_date_paid(count) = textLine.Substring(1789, 6)
-    '                Columbia_County_TBPD_paid_by(count) = textLine.Substring(1795, 30)
-    '                Columbia_County_TBPD_nov_amount(count) = textLine.Substring(1825, 14)
-
-    '                'Multidimensional array to put 10 variables
-    '                Dim k As Integer = 1839
-    '                For delq_counter = 0 To 9
-
-    '                    Columbia_County_TBPD_delq_year(count, delq_counter) = textLine.Substring(k, 4)
-    '                    Columbia_County_TBPD_delq_tax(count, delq_counter) = textLine.Substring(k + 4, 13)
-    '                    Columbia_County_TBPD_delq_face(count, delq_counter) = textLine.Substring(k + 17, 13)
-    '                    k = k + 30
-    '                    Console.WriteLine(Columbia_County_TBPD_delq_year(count, delq_counter) & " " & Columbia_County_TBPD_delq_tax(count, delq_counter) & " " & Columbia_County_TBPD_delq_face(count, delq_counter))
-
-    '                Next delq_counter
-    '                Console.WriteLine()
-
-
-
-    '                Columbia_County_TBPD_st_city(count) = textLine.Substring(2139, 3)
-    '                Columbia_County_TBPD_st_name(count) = textLine.Substring(2142, 22)
-    '                Columbia_County_TBPD_st_no(count) = textLine.Substring(2164, 8)
-    '                Columbia_County_TBPD_geo_number(count) = textLine.Substring(2172, 30)
-    '                Columbia_County_TBPD_future_use(count) = textLine.Substring(2202, 97)
-    '                Columbia_County_TBPD_end_char(count) = textLine.Substring(2299, 1)
-
-
-
-    '                count = count + 1
-
-
-
-    '            End If
-
-    '        Loop
-
-    '    Else
-    '        MsgBox("File Does Not Exist")
-
-    '    End If
-
-    '    Console.WriteLine(Columbia_County_TBPD_st_city(1))
-    '    Console.WriteLine(Columbia_County_TBPD_st_name(1))
-    '    Console.WriteLine(Columbia_County_TBPD_st_no(1))
-    '    Console.WriteLine(Columbia_County_TBPD_geo_number(1))
-    '    Console.WriteLine("Ready to write outputs in UFC file ...")
-    '    Dim writeCsv As New StreamWriter("G:\FreeLance\John_Elance\Week4\Columbia_colon_formatted_csv.txt")
-
-    '    Dim UFC_Parcel_County As String
-    '    Dim UFC_Parcel_ID As String
-    '    Dim UFC_Parcel_Status As String
-    '    Dim UFC_Parcel_Tax_District As String
-    '    Dim UFC_Parcel_Just_Value As Integer
-    '    Dim UFC_Parcel_Taxable_Value As Integer
-    '    Dim UFC_Parcel_Street_Address_1 As String
-    '    Dim UFC_Parcel_Street_Address_2 As String
-    '    Dim UFC_Parcel_Street_Address_3 As String
-    '    Dim UFC_Parcel_Street_Address_4 As String
-    '    Dim UFC_Parcel_Street_Address_5 As String
-    '    Dim UFC_Parcel_Street_Address_6 As String
-    '    Dim UFC_Parcel_City As String
-    '    Dim UFC_Parcel_State As String
-    '    Dim UFC_Parcel_ZIP_Code As String
-    '    Dim UFC_Parcel_ZIP_Code4 As String
-    '    Dim UFC_Parcel_Owner_First_Name As String
-    '    Dim UFC_Parcel_Owner_Last_Name As String
-    '    Dim UFC_Parcel_Owner_Street_Address_1 As String
-    '    Dim UFC_Parcel_Owner_Street_Address_2 As String
-    '    Dim UFC_Parcel_Owner_Street_Address_3 As String
-    '    Dim UFC_Parcel_Owner_Street_Address_4 As String
-    '    Dim UFC_Parcel_Owner_Street_Address_5 As String
-    '    Dim UFC_Parcel_Owner_Street_Address_6 As String
-    '    Dim UFC_Parcel_Owner_City As String
-    '    Dim UFC_Parcel_Owner_State As String
-    '    Dim UFC_Parcel_Owner_ZIP_Code As String
-    '    Dim UFC_Parcel_Owner_ZIP_Code4 As String
-    '    Dim UFC_Parcel_Owner_Country As String
-    '    Dim UFC_Parcel_Num_of_Exemptions As Integer
-    '    Dim UFC_Parcel_Total_Ex_Amount As Integer
-    '    Dim UFC_Parcel_Exemption_Type_1 As String
-    '    Dim UFC_Parcel_Exemption_Type_2 As String
-    '    Dim UFC_Parcel_Exemption_Type_3 As String
-    '    Dim UFC_Parcel_Exemption_Type_4 As String
-    '    Dim UFC_Parcel_Exemption_Type_5 As String
-    '    Dim UFC_Parcel_Exemption_Type_6 As String
-    '    Dim UFC_Parcel_Exemption_Amount_1 As Integer
-    '    Dim UFC_Parcel_Exemption_Amount_2 As Integer
-    '    Dim UFC_Parcel_Exemption_Amount_3 As Integer
-    '    Dim UFC_Parcel_Exemption_Amount_4 As Integer
-    '    Dim UFC_Parcel_Exemption_Amount_5 As Integer
-    '    Dim UFC_Parcel_Exemption_Amount_6 As Integer
-    '    Dim UFC_Parcel_Legal_Description As String
-    '    Dim UFC_TC_Number As String
-    '    Dim UFC_TC_Status As String
-    '    Dim UFC_TC_Issue_Year As String
-    '    Dim UFC_TC_Tax_Year As String
-    '    Dim UFC_TC_Face_Value As Integer
-    '    Dim UFC_TC_Sale_Date As String
-    '    Dim UFC_TC_Redemption_Date As String
-    '    Dim UFC_TC_Interest_Rate As Decimal
-    '    Dim UFC_TC_Redemption_Amount As Integer
-    '    Dim UFC_TC_Days_Unpaid As Integer
-
-
-
-    '    writeCsv.WriteLine("ParcelCounty~ParcelID~ParcelStatus~ParcelTaxDistrict~ParcelJustValue~ParcelTaxableValue~ParcelStreetAddress1~ParcelStreetAddress2~ParcelStreetAddress3~ParcelStreetAddress4~ParcelStreetAddress5~ParcelStreetAddress6~ParcelCity~ParcelState~ParcelZIPCode~ParcelZIPCode+4~ParcelOwnerFirstName~ParcelOwnerLastName~ParcelOwnerStreetAddress1~ParcelOwnerStreetAddress2~ParcelOwnerStreetAddress3~ParcelOwnerStreetAddress4~ParcelOwnerStreetAddress5~ParcelOwnerStreetAddress6~ParcelOwnerCity~ParcelOwnerState~ParcelOwnerZIPCode~ParcelOwnerZIPCode+4~ParcelOwnerCountry~ParcelNum.ofExemptions~ParcelTotalEx.Amount~ParcelExemptionType1~ParcelExemptionType2~ParcelExemptionType3~ParcelExemptionType4~ParcelExemptionType5~ParcelExemptionType6~ParcelExemptionAmount1~ParcelExemptionAmount2~ParcelExemptionAmount3~ParcelExemptionAmount4~ParcelExemptionAmount5~ParcelExemptionAmount6~ParcelLegalDescription~TCNumber~TCStatus~TCIssueYear~TCTaxYear~TCFaceValue~TCSaleDate~TCRedemptionDate~TCInterestRate~TCRedemptionAmount~TCDaysUnpaid")
-
-
-    '    For i As Integer = 1 To Columbia_County_record_length
-
-    '        UFC_Parcel_County = "Columbia"
-
-    '        UFC_Parcel_ID = Columbia_County_TBPD_acct_no(i).Trim
-    '        Console.WriteLine(UFC_Parcel_ID)
-    '        UFC_Parcel_Status = ""
-    '        UFC_Parcel_Tax_District = ""
-    '        UFC_Parcel_Just_Value = -1
-    '        UFC_Parcel_Taxable_Value = Columbia_County_TBPD_base_taxable(i).Trim
-    '        UFC_Parcel_Street_Address_1 = Columbia_County_TBPD_st_no(i).Trim
-    '        UFC_Parcel_Street_Address_2 = Columbia_County_TBPD_st_name(i).Trim
-    '        UFC_Parcel_Street_Address_3 = ""
-    '        UFC_Parcel_Street_Address_4 = ""
-    '        UFC_Parcel_Street_Address_5 = ""
-    '        UFC_Parcel_Street_Address_6 = ""
-    '        UFC_Parcel_City = Columbia_County_TBPD_st_city(i).Trim
-    '        UFC_Parcel_State = "STATE" 'Need to parse for Alachua & Highlands
-    '        UFC_Parcel_ZIP_Code = Columbia_County_TBPD_zip(i)
-    '        UFC_Parcel_ZIP_Code4 = ""
-    '        UFC_Parcel_Owner_First_Name = ""
-    '        UFC_Parcel_Owner_Last_Name = ""
-    '        UFC_Parcel_Owner_Street_Address_1 = Columbia_County_TBPD_ownr_addr1(i).Trim & " " & Columbia_County_TBPD_ownr_addr2(i).Trim & " " & Columbia_County_TBPD_ownr_addr3(i).Trim & " " & Columbia_County_TBPD_ownr_addr4(i).Trim & " " & Columbia_County_TBPD_ownr_addr5(i).Trim & " " & Columbia_County_TBPD_ownr_addr6(i).Trim & " " & Columbia_County_TBPD_ownr_addr7(i).Trim
-    '        UFC_Parcel_Owner_Street_Address_2 = ""
-    '        UFC_Parcel_Owner_Street_Address_3 = ""
-    '        UFC_Parcel_Owner_Street_Address_4 = ""
-    '        UFC_Parcel_Owner_Street_Address_5 = ""
-    '        UFC_Parcel_Owner_Street_Address_6 = ""
-    '        UFC_Parcel_Owner_City = ""
-    '        UFC_Parcel_Owner_State = ""
-    '        UFC_Parcel_Owner_ZIP_Code = ""
-    '        UFC_Parcel_Owner_ZIP_Code4 = ""
-    '        UFC_Parcel_Owner_Country = ""
-    '        UFC_Parcel_Num_of_Exemptions = -1
-    '        UFC_Parcel_Total_Ex_Amount = -1
-    '        UFC_Parcel_Exemption_Type_1 = ""
-    '        UFC_Parcel_Exemption_Type_2 = ""
-    '        UFC_Parcel_Exemption_Type_3 = ""
-    '        UFC_Parcel_Exemption_Type_4 = ""
-    '        UFC_Parcel_Exemption_Type_5 = ""
-    '        UFC_Parcel_Exemption_Type_6 = ""
-    '        UFC_Parcel_Exemption_Amount_1 = -1
-    '        UFC_Parcel_Exemption_Amount_2 = -1
-    '        UFC_Parcel_Exemption_Amount_3 = -1
-    '        UFC_Parcel_Exemption_Amount_4 = -1
-    '        UFC_Parcel_Exemption_Amount_5 = -1
-    '        UFC_Parcel_Exemption_Amount_6 = -1
-    '        UFC_Parcel_Legal_Description = Columbia_County_TBPD_legal1(i).Trim & " " & Columbia_County_TBPD_legal2(i).Trim & " " & Columbia_County_TBPD_legal3(i).Trim & " " & Columbia_County_TBPD_legal4(i).Trim & " " & Columbia_County_TBPD_legal5(i).Trim & " " & Columbia_County_TBPD_legal6(i).Trim & " " & Columbia_County_TBPD_legal7(i).Trim
-    '        UFC_TC_Number = ""
-    '        UFC_TC_Status = Columbia_County_TBPD_status(i).Trim
-    '        UFC_TC_Issue_Year = "MUL" ' need to strip years only
-    '        'Dim yearOnly As String()
-    '        'yearOnly = Split(UFC_TC_Issue_Year, "/")
-    '        'Console.WriteLine(yearOnly(2))
-    '        'UFC_TC_Issue_Year = yearOnly(2)
-    '        UFC_TC_Tax_Year = "MUL"
-    '        UFC_TC_Face_Value = -1
-    '        UFC_TC_Sale_Date = ""
-    '        UFC_TC_Redemption_Date = Columbia_County_TBPD_date_paid(i).Trim
-    '        UFC_TC_Interest_Rate = -1
-
-    '        If Columbia_County_TBPD_total_paid(i).Trim = "" Then
-    '            UFC_TC_Redemption_Amount = -1
-    '        Else
-    '            UFC_TC_Redemption_Amount = Columbia_County_TBPD_total_paid(i).Trim
-
-    '        End If
-
-    '        UFC_TC_Days_Unpaid = 100
-    '        ' Write into CSV
-    '        writeCsv.WriteLine(UFC_Parcel_County.Trim() & "~" & UFC_Parcel_ID & "~" &
-    '       UFC_Parcel_Status & "~" &
-    '       UFC_Parcel_Tax_District & "~" &
-    '       UFC_Parcel_Just_Value & "~" &
-    '       UFC_Parcel_Taxable_Value & "~" &
-    '       UFC_Parcel_Street_Address_1 & "~" &
-    '       UFC_Parcel_Street_Address_2 & "~" &
-    '       UFC_Parcel_Street_Address_3 & "~" &
-    '       UFC_Parcel_Street_Address_4 & "~" &
-    '       UFC_Parcel_Street_Address_5 & "~" &
-    '       UFC_Parcel_Street_Address_6 & "~" &
-    '       UFC_Parcel_City & "~" &
-    '       UFC_Parcel_State & "~" &
-    '       UFC_Parcel_ZIP_Code & "~" &
-    '       UFC_Parcel_ZIP_Code4 & "~" &
-    '       UFC_Parcel_Owner_First_Name & "~" &
-    '       UFC_Parcel_Owner_Last_Name & "~" &
-    '       UFC_Parcel_Owner_Street_Address_1 & "~" &
-    '       UFC_Parcel_Owner_Street_Address_2 & "~" &
-    '       UFC_Parcel_Owner_Street_Address_3 & "~" &
-    '       UFC_Parcel_Owner_Street_Address_4 & "~" &
-    '       UFC_Parcel_Owner_Street_Address_5 & "~" &
-    '       UFC_Parcel_Owner_Street_Address_6 & "~" &
-    '       UFC_Parcel_Owner_City & "~" &
-    '       UFC_Parcel_Owner_State & "~" &
-    '       UFC_Parcel_Owner_ZIP_Code & "~" &
-    '       UFC_Parcel_Owner_ZIP_Code4 & "~" &
-    '       UFC_Parcel_Owner_Country & "~" &
-    '       UFC_Parcel_Num_of_Exemptions & "~" &
-    '       UFC_Parcel_Total_Ex_Amount & "~" &
-    '       UFC_Parcel_Exemption_Type_1 & "~" &
-    '       UFC_Parcel_Exemption_Type_2 & "~" &
-    '       UFC_Parcel_Exemption_Type_3 & "~" &
-    '       UFC_Parcel_Exemption_Type_4 & "~" &
-    '       UFC_Parcel_Exemption_Type_5 & "~" &
-    '       UFC_Parcel_Exemption_Type_6 & "~" &
-    '       UFC_Parcel_Exemption_Amount_1 & "~" &
-    '       UFC_Parcel_Exemption_Amount_2 & "~" &
-    '       UFC_Parcel_Exemption_Amount_3 & "~" &
-    '       UFC_Parcel_Exemption_Amount_4 & "~" &
-    '       UFC_Parcel_Exemption_Amount_5 & "~" &
-    '       UFC_Parcel_Exemption_Amount_6 & "~" &
-    '       UFC_Parcel_Legal_Description & "~" &
-    '       UFC_TC_Number & "~" &
-    '       UFC_TC_Status & "~" &
-    '       UFC_TC_Issue_Year & "~" &
-    '       UFC_TC_Tax_Year & "~" &
-    '       UFC_TC_Face_Value & "~" &
-    '       UFC_TC_Sale_Date & "~" &
-    '       UFC_TC_Redemption_Date & "~" &
-    '       UFC_TC_Interest_Rate & "~" &
-    '       UFC_TC_Redemption_Amount & "~" &
-    '       UFC_TC_Days_Unpaid)
-    '    Next
-
-
-
-    '    writeCsv.Close()
-    '    Console.WriteLine("Written into file completed....")
-
-    'End Sub
     Sub Main()
 
         'Parse_Cobol_Collier_County()
@@ -3983,9 +3580,13 @@ Module Module1
         'Parse_Indian_River_County()
         'Parse_Highlands_County()
         'Parse_Alachua_County()
-        Parse_Manatee_County()
+        'Parse_Manatee_County()
         'Parse_Clay_County()
         'Parse_Columbia_County() 
+        'PascoCounty.ParsePascoCounty()
+        Columbia.ParseColumbiaCounty()
+        'Hillsborough.ParseHillsboroughCounty()
+        'SantaRosa.ParseSantaRosaCounty()
 
         ' '''''''''''''''''''''''''''''''''''''''''''''''''
 
@@ -4024,7 +3625,7 @@ Module Module1
         ' ''''''''''''''''''''''''''''''''''''''''''''''''''
         'Dim google_address As Hashtable = GetGoogleAddress("2611 W PHEASANT CT", " ", "FL")
         'Dim bing_address As Hashtable = GetBingAddress("5010 MIRAHAM DR", "", "FL")
-
+        'Dim corrected_address As Hashtable = GetCorrectedAddress("2613  HACIENDA DR LORIDA, FL 33857")
 
         Console.ReadKey()
     End Sub
